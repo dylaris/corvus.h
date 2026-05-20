@@ -10,13 +10,17 @@
  *
  * flag macro
  * - CORVUS_NO_LOG
+ * - CORVUS_IMPLEMENTATION
  */
+
+#ifndef CORVUS_H
+#define CORVUS_H
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <assert.h>
-
 
 #ifndef CORVUSDEF
 #define CORVUSDEF
@@ -49,13 +53,19 @@ typedef struct {
 #define arrhdr(a) ((ArrayHeader*)((char*)a-sizeof(ArrayHeader)))
 #define arrlen(a) ((a) ? arrhdr(a)->len : 0)
 #define arrcap(a) ((a) ? arrhdr(a)->cap : 0)
+/* Note: after calling realloc, the old a becomes invalid.
+   Always capture the old state (capacity, etc.) before
+   reallocation, and never use the old a afterwards. */
 #define arrkeep(a, sz) do { \
     if (arrcap(a) < (sz)) { \
-        ArrayHeader *h = (a) ? arrhdr(a) : NULL; \
-        h = CORVUS_REALLOC(h, sizeof(ArrayHeader)+(sz)*sizeof(*(a))); \
+        int newcap = (sz); \
+        int elemsz = sizeof(*(a)); \
+        bool init = (a) == NULL; \
+        ArrayHeader *h = init ? NULL : arrhdr(a); \
+        h = CORVUS_REALLOC(h, sizeof(ArrayHeader)+newcap*elemsz); \
         CORVUS_ASSERT(h && "run out of memory"); \
-        h->len = arrlen(a); \
-        h->cap = (sz); \
+        if (init) h->len = 0; \
+        h->cap = newcap; \
         (a) = (void *) (h + 1); \
     } \
 } while (0)
@@ -84,8 +94,6 @@ typedef struct {
     CORVUS_ASSERT(arrlen(a)>0); \
     memmove((a), (a)+1, (--arrhdr(a)->len)*sizeof(*(a))); \
 } while (0)
-#define arrbegin(a) (CORVUS_ASSERT(a), (a))
-#define arrend(a) (CORVUS_ASSERT(a), (a)+arrlen(a))
 #define arrtop(a) (CORVUS_ASSERT(a), (a)[arrlen(a)-1])
 #define arrbot(a) (CORVUS_ASSERT(a), (a)[0])
 #define arrrev(T, a) do { \
@@ -95,6 +103,8 @@ typedef struct {
 } while (0)
 #define arrclear(a) do { CORVUS_ASSERT(a); arrhdr(a)->len = 0; } while (0)
 #define arrfree(a) do { CORVUS_ASSERT(a); CORVUS_FREE(arrhdr(a)); } while (0)
+#define arrbegin(a) (CORVUS_ASSERT(a), a)
+#define arrend(a) (CORVUS_ASSERT(a), (a)+arrlen(a))
 #define arrforeach(T, a) for (T *it = arrbegin(a); it < arrend(a); it++)
 
 /* string view & string buffer */
@@ -169,8 +179,8 @@ typedef struct {
         h->rptr = 0; \
         h->len = 0; \
         h->cap = (sz); \
+        (r) = (void *) (h + 1); \
     } \
-    (r) = (void *) (h + 1); \
 } while (0)
 #define rbuffree(r) do { CORVUS_ASSERT(r); CORVUS_FREE(rbufhdr(r)); } while (0)
 #define rbufclear(r) do { \
@@ -181,9 +191,13 @@ typedef struct {
 #define rbufput(r, e) do { \
     CORVUS_ASSERT(r); \
     RingBufferHeader *h = rbufhdr(r); \
-    (r)[wrapinc_pre(&h->wptr, h->cap)] = (e); \
+    (r)[wrapinc_post(&h->wptr, h->cap)] = (e); \
+    h->len++; \
 } while (0)
-#define rbufget(r) (CORVUS_ASSERT(rbuflen(r) > 0), (r)[wrapinc_post(&rbufhdr(r)->rptr, rbufcap(r))])
+#define rbufget(r) (CORVUS_ASSERT(rbuflen(r) > 0), rbufhdr(r)->len--, (r)[wrapinc_post(&rbufhdr(r)->rptr, rbufcap(r))])
+#define rbufbegin(r) (CORVUS_ASSERT(r), (r)+rbufhdr(r)->rptr)
+#define rbufend(r) (CORVUS_ASSERT(r), (r)+rbufhdr(r)->wptr)
+#define rbufforeach(T, r) for (T *it = rbufbegin(r); it != rbufend(r); it = (r) + wrapinc(it-r, rbufcap(r)))
 
 /* deque */
 
@@ -198,21 +212,27 @@ typedef struct {
 #define deqhdr(q) ((DequeHeader*)((char*)q-sizeof(DequeHeader)))
 #define deqlen(q) ((q) ? deqhdr(q)->len : 0)
 #define deqcap(q) ((q) ? deqhdr(q)->cap : 0)
+/* Note: after calling realloc, the old q becomes invalid.
+   Always capture the old state (capacity, etc.) before
+   reallocation, and never use the old q afterwards. */
 #define deqkeep(q, sz) do { \
     if (deqcap(q) < (sz)) { \
-        DequeHeader *h = (q) ? deqhdr(q) : NULL; \
-        h = CORVUS_REALLOC(h, sizeof(DequeHeader)+(sz)*sizeof(*(q))); \
+        int newcap = (sz); \
+        int elemsz = sizeof(*(q)); \
+        bool init = (q) == NULL; \
+        DequeHeader *h = init ? NULL: deqhdr(q); \
+        h = CORVUS_REALLOC(h, sizeof(DequeHeader)+newcap*elemsz); \
         CORVUS_ASSERT(h && "run out of memory"); \
-        if (!(q)) { \
+        if (init) { \
             h->front = 0; \
             h->rear = 0; \
             h->len = 0; \
-        } else if (h->rear > 0 && h->rear <= h->front) { \
+        } else if (h->rear <= h->front) { \
             char *data = (char *) (h + 1); \
-            memmove(data + h->cap*sizeof(*(q)), data, h->rear*sizeof(*(q))); \
+            memmove(data + h->cap*elemsz, data, h->rear*elemsz); \
             h->rear += h->cap; \
         } \
-        h->cap = (sz); \
+        h->cap = newcap; \
         (q) = (void *) (h + 1); \
     } \
 } while (0)
@@ -224,7 +244,7 @@ typedef struct {
     } else if (deqlen(q) + 1 > deqcap(q)) { \
         deqkeep(q, 2 * deqcap(q)); \
     } \
-    DequeHeader *h = dephdr(q); \
+    DequeHeader *h = deqhdr(q); \
     (q)[wrapinc_post(&h->rear, h->cap)] = (e); \
     h->len++; \
 } while (0)
@@ -234,18 +254,21 @@ typedef struct {
     } else if (deqlen(q) + 1 > deqcap(q)) { \
         deqkeep(q, 2 * deqcap(q)); \
     } \
-    DequeHeader *h = dephdr(q); \
+    DequeHeader *h = deqhdr(q); \
     (q)[wrapdec_pre(&h->front, h->cap)] = (e); \
     h->len++; \
 } while (0)
 #define deqpopb(q) (CORVUS_ASSERT(deqlen(q) > 0), deqhdr(q)->len--, (q)[wrapdec_pre(&deqhdr(q)->rear, deqcap(q))])
-#define deqpopf(q) (CORVUS_ASSERT(deqlen(q) > 0), deqhdr(q)->len--, (q)[wrapdec_post(&deqhdr(q)->front, deqcap(q)])
+#define deqpopf(q) (CORVUS_ASSERT(deqlen(q) > 0), deqhdr(q)->len--, (q)[wrapinc_post(&deqhdr(q)->front, deqcap(q))])
 #define deqfree(q) do { CORVUS_ASSERT(q); CORVUS_FREE(deqhdr(q)); } while (0)
 #define deqclear(q) do { \
     CORVUS_ASSERT(q); \
     DequeHeader *h = deqhdr(q); \
     h->front = h->rear = h->len = 0; \
 } while (0)
+#define deqbegin(q) (CORVUS_ASSERT(q), (q)+deqhdr(q)->front)
+#define deqend(q) (CORVUS_ASSERT(q), (q)+deqhdr(q)->rear)
+#define deqforeach(T, q) for (T *it = deqbegin(q); it != deqend(q); it = (q) + wrapinc(it-q, deqcap(q)))
 
 /* math */
 
@@ -297,24 +320,7 @@ typedef enum {
     #define UNREACHABLE(fmt, ...)
 #endif
 
-int main(void)
-{
-    Array(int) xs = NULL;
-    for (int i = 0; i < 100; i++) arrpush(xs, i);
-    arrforeach(int, xs) {
-        printf("%d\n", *it);
-    }
-    arrunshift(xs);
-    arrshift(xs, 1001);
-    arrrev(int, xs);
-    arrforeach(int, xs) {
-        printf("%d\n", *it);
-    }
-    log(CORVUS_INFO, "bot: %d", arrbot(xs));
-    printf("top: %d\n", arrtop(xs));
-    arrclear(xs);
-    printf("len: %d\n", arrlen(xs));
-    printf("cap: %d\n", arrcap(xs));
-    arrfree(xs);
-    return 0;
-}
+#endif /* CORVUS_H */
+
+#ifdef CORVUS_IMPLEMENTATION
+#endif /* CORVUS_IMPLEMENTATION */
