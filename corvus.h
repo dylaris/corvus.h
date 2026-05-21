@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <stdarg.h>
 
 #ifndef CORVUSDEF
 #define CORVUSDEF
@@ -110,53 +111,66 @@ typedef struct {
 /* string view & string buffer */
 
 typedef struct {
-    const char *ptr;
+    const char *data;
     int len;
 } StrView;
 
 typedef struct {
-    char *chars;
+    char *data;
     int len;
     int cap;
 } StrBuf;
 
 CORVUSDEF StrView svfromcsr(const char *cstr);
-CORVUSDEF StrView svfromsbuf(const StrBuf sb);
-CORVUSDEF bool sveq(StrView a, StrView b);
+CORVUSDEF StrView svfromsbuf(const StrBuf *sb);
+CORVUSDEF bool sveqv(StrView a, StrView b);
 CORVUSDEF bool sveqs(StrView sv, const char *cstr);
+CORVUSDEF bool sveqf(StrView sv, const char *fmt, ...);
+CORVUSDEF bool sveqp(StrView sv, const void *p, int len);
 CORVUSDEF StrView svsub(StrView sv, int start, int len);
-CORVUSDEF int svchr(StrView sv, char c);
-CORVUSDEF int svstr(StrView sv, StrView sub);
+CORVUSDEF int svfinds(StrView sv, const char *cstr);
+CORVUSDEF int svfindc(StrView sv, char c);
+CORVUSDEF int svfindp(StrView sv, const void *p, int len);
+CORVUSDEF int svfindv(StrView sv, StrView sub);
 CORVUSDEF StrView svtrim(StrView sv);
 CORVUSDEF StrView svtriml(StrView sv);
 CORVUSDEF StrView svtrimr(StrView sv);
 CORVUSDEF StrView svchop(StrView sv, char c);
-CORVUSDEF bool svstart(StrView sv, StrView prefix);
-CORVUSDEF bool svend(StrView sv, StrView suffix);
+CORVUSDEF StrView svchopn(StrView sv, const char *cs);
+CORVUSDEF bool svprefix(StrView sv, StrView prefix);
+CORVUSDEF bool svsuffix(StrView sv, StrView suffix);
 CORVUSDEF char *svtocstr(const StrView sv);
-#define svforeach(sv) for (const char *it = (sv).ptr; it < (sb).ptr + (sv).len; it++)
+#define svbegin(sv) (CORVUS_ASSERT((sv).data), (sv).data)
+#define svend(sv) (CORVUS_ASSERT((sv).data), (sv).data+(sv).len)
+#define svforeach(sv) for (const char *it = svbegin(sv); it < svend(sv); it++)
 
 CORVUSDEF void sbclear(StrBuf *sb);
 CORVUSDEF void sbfree(StrBuf *sb);
+CORVUSDEF void sbkeep(StrBuf *sb, int sz);
+CORVUSDEF void sbcatsn(StrBuf *sb, ... /* NULL */);
+CORVUSDEF void sbcatcn(StrBuf *sb, ... /* -1 */);
 CORVUSDEF void sbcats(StrBuf *sb, const char *cstr);
 CORVUSDEF void sbcatc(StrBuf *sb, char c);
 CORVUSDEF void sbcatf(StrBuf *sb, const char *fmt, ...);
 CORVUSDEF void sbcatp(StrBuf *sb, const void *ptr, int len);
-CORVUSDEF void sbcatv(StrBuf *sb, const StrView sv);
+CORVUSDEF void sbcatv(StrBuf *sb, StrView sv);
 CORVUSDEF void sbinss(StrBuf *sb, int pos, const char *cstr);
-CORVUSDEF void sbinsc(StrBuf *sb, char c);
+CORVUSDEF void sbinsc(StrBuf *sb, int pos, char c);
 CORVUSDEF void sbinsf(StrBuf *sb, int pos, const char *fmt, ...);
 CORVUSDEF void sbinsp(StrBuf *sb, int pos, const void *ptr, int len);
-CORVUSDEF void sbinsv(StrBuf *sb, int pos, const StrView sv);
+CORVUSDEF void sbinsv(StrBuf *sb, int pos, StrView sv);
 CORVUSDEF void sbdel(StrBuf *sb, int pos, int len);
 CORVUSDEF void sbset(StrBuf *sb, int pos, char c);
 CORVUSDEF void sbrev(StrBuf *sb);
 CORVUSDEF void sbrep(StrBuf *sb, const char *cstr, int times);
+CORVUSDEF void sbjoin(StrBuf *sb, const char *sep, ... /* NULL */);
 CORVUSDEF void sbtoupper(StrBuf *sb);
 CORVUSDEF void sbtolower(StrBuf *sb);
-CORVUSDEF const char *sbascstr(StrBuf *sb);
-CORVUSDEF StrView sbview(const StrBuf *sb);
-#define sbforeach(sb) for (const char *it = (sb).chars; it < (sb).chars + (sb).len; it++)
+CORVUSDEF const char *sbtocstr(StrBuf *sb);
+CORVUSDEF StrView sbtoview(const StrBuf *sb);
+#define sbbegin(sb) (CORVUS_ASSERT((sb).data), (sb).data)
+#define sbend(sb) (CORVUS_ASSERT((sb).data), (sb).data+(sb).len)
+#define sbforeach(sb) for (char *it = sbbegin(sb); it < sbend(sb); it++)
 
 /* ring buffer */
 
@@ -323,4 +337,425 @@ typedef enum {
 #endif /* CORVUS_H */
 
 #ifdef CORVUS_IMPLEMENTATION
+
+CORVUSDEF StrView svfromcsr(const char *cstr)
+{
+    return (StrView) {
+        .data = cstr,
+        .len = (int)strlen(cstr),
+    };
+}
+
+CORVUSDEF StrView svfromsbuf(const StrBuf *sb)
+{
+    return (StrView) {
+        .data = sb->data,
+        .len = sb->len,
+    };
+}
+
+CORVUSDEF bool sveqv(StrView a, StrView b)
+{
+    if (a.len != b.len) return false;
+    return memcmp(a.data, b.data, a.len) == 0;
+}
+
+CORVUSDEF bool sveqs(StrView sv, const char *cstr)
+{
+    int len = (int)strlen(cstr);
+    if (sv.len != len) return false;
+    return memcmp(sv.data, cstr, len) == 0;
+}
+
+CORVUSDEF bool sveqf(StrView sv, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    int len = vsnprintf(NULL, 0, fmt, args);
+    va_end(args);
+
+    if (sv.len != len) return false;
+
+    char *pattern = CORVUS_REALLOC(NULL, len + 1);
+    CORVUS_ASSERT(pattern && "run out of memory");
+
+    va_start(args, fmt);
+    vsnprintf(pattern, len + 1, fmt, args);
+    va_end(args);
+
+    bool result = memcmp(sv.data, pattern, len) == 0;
+
+    CORVUS_FREE(pattern);
+    return result;
+}
+
+CORVUSDEF bool sveqp(StrView sv, const void *p, int len)
+{
+    if (sv.len != len) return false;
+    return memcmp(sv.data, p, len) == 0;
+}
+
+CORVUSDEF StrView svsub(StrView sv, int start, int len)
+{
+    return (StrView) {
+        .data = sv.data + start,
+        .len = len,
+    };
+}
+
+CORVUSDEF int svfindc(StrView sv, char c)
+{
+    struct { int pos; char c; } state = { 0, c };
+    if (c != -1) {
+        /* reset state */
+        state.pos = 0;
+        state.c = c;
+    }
+
+    for (int i = state.pos; i < sv.len; i++) {
+        if (sv.data[i] != c) continue;
+        return state.pos = i;
+    }
+    return -1;
+}
+
+#define _sv_find_part_ \
+    if (state.len == 0 || state.len > sv.len) return -1; \
+    for (int i = state.pos; i < sv.len; i++) { \
+        if (memcmp(sv.data + i, state.p, state.len) == 0) { \
+            return state.pos = i; \
+        } \
+    } \
+    return -1;
+
+CORVUSDEF int svfinds(StrView sv, const char *cstr)
+{
+    struct { int pos; const void *p; int len; } state;
+    if (cstr != NULL) {
+        /* reset state */
+        state.pos = 0;
+        state.p   = cstr;
+        state.len = strlen(cstr);
+    }
+    _sv_find_part_
+}
+
+CORVUSDEF int svfindv(StrView sv, StrView sub)
+{
+    static struct { int pos; const void *p; int len; } state;
+    if (sub.data != NULL) {
+        /* reset state */
+        state.pos = 0;
+        state.p   = sub.data;
+        state.len = sub.len;
+    }
+    _sv_find_part_
+}
+
+CORVUSDEF int svfindp(StrView sv, const void *p, int len)
+{
+    static struct { int pos; const void *p; int len; } state;
+    if (p != NULL) {
+        /* reset state */
+        state.pos = 0;
+        state.p   = p;
+        state.len = len;
+    }
+    _sv_find_part_
+}
+
+#undef _sv_find_part_
+
+static inline bool iswhitespace(char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
+
+CORVUSDEF StrView svtrim(StrView sv)
+{
+    int start = 0;
+    int end = sv.len;
+    while (start < end && iswhitespace(sv.data[start])) start++;
+    while (end > start && iswhitespace(sv.data[end - 1])) end--;
+    return (StrView) { .data = sv.data + start, .len = end - start };
+}
+
+CORVUSDEF StrView svtriml(StrView sv)
+{
+    int start = 0;
+    while (start < sv.len && iswhitespace(sv.data[start])) start++;
+    return (StrView) { .data = sv.data + start, .len = sv.len - start };
+}
+
+CORVUSDEF StrView svtrimr(StrView sv)
+{
+    int end = sv.len;
+    while (end > 0 && iswhitespace(sv.data[end - 1])) end--;
+    return (StrView) { .data = sv.data, .len = end };
+}
+
+CORVUSDEF StrView svchop(StrView sv, char c)
+{
+    int i = sv.len;
+    while (i > 0 && sv.data[i-1] == c) i--;
+    return (StrView) { .data = sv.data, .len = i };
+}
+
+CORVUSDEF StrView svchopn(StrView sv, const char *cs)
+{
+    int i = sv.len;
+    while (i > 0) {
+        bool found = false;
+        for (const char *c = cs; *c != '\0'; c++) {
+            if (sv.data[i-1] == *c) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) break;
+        i--;
+    }
+    return (StrView) { .data = sv.data, .len = i };
+}
+
+CORVUSDEF bool svprefix(StrView sv, StrView prefix)
+{
+    if (prefix.len > sv.len) return false;
+    return memcmp(sv.data, prefix.data, prefix.len) == 0;
+}
+
+CORVUSDEF bool svsuffix(StrView sv, StrView suffix)
+{
+    if (suffix.len > sv.len) return false;
+    return memcmp(sv.data + sv.len - suffix.len, suffix.data, suffix.len) == 0;
+}
+
+CORVUSDEF char *svtocstr(const StrView sv)
+{
+    char *cstr = CORVUS_REALLOC(NULL, sv.len + 1);
+    CORVUS_ASSERT(cstr && "run out of memory");
+    memcpy(cstr, sv.data, sv.len);
+    cstr[sv.len] = '\0';
+    return cstr;
+}
+
+CORVUSDEF void sbclear(StrBuf *sb)
+{
+    sb->len = 0;
+}
+
+CORVUSDEF void sbfree(StrBuf *sb)
+{
+    if (!sb->data) return;
+    CORVUS_FREE(sb->data);
+    sb->data = NULL;
+    sb->len = sb->cap = 0;
+}
+
+static void sbgrow_(StrBuf *sb, int needed)
+{
+    if (sb->len + needed <= sb->cap) return;
+    int newcap = sb->cap == 0 ? CORVUS_INITCAP : sb->cap;
+    while (newcap < sb->len + needed) newcap *= 2;
+    char *newdata = CORVUS_REALLOC(sb->data, newcap);
+    CORVUS_ASSERT(newdata && "run out of memory");
+    sb->data = newdata;
+    sb->cap = newcap;
+}
+
+CORVUSDEF void sbkeep(StrBuf *sb, int sz)
+{
+    if (sz > sb->cap) sbgrow_(sb, sz - sb->len);
+}
+
+CORVUSDEF void sbcatsn(StrBuf *sb, ... /* NULL */)
+{
+    va_list args;
+    va_start(args, sb);
+
+    const char *str = va_arg(args, const char *);
+    while (str != NULL) {
+        sbcats(sb, str);
+        str = va_arg(args, const char *);
+    }
+
+    va_end(args);
+}
+
+CORVUSDEF void sbcatcn(StrBuf *sb, ... /* -1 */)
+{
+    va_list args;
+    va_start(args, sb);
+
+    int c = va_arg(args, int);
+    while (c != -1) {
+        sbcatc(sb, (char)c);
+        c = va_arg(args, int);
+    }
+
+    va_end(args);
+}
+
+CORVUSDEF void sbcats(StrBuf *sb, const char *cstr)
+{
+    int len = (int)strlen(cstr);
+    sbgrow_(sb, len);
+    memcpy(sb->data + sb->len, cstr, len);
+    sb->len += len;
+}
+
+CORVUSDEF void sbcatc(StrBuf *sb, char c)
+{
+    sbgrow_(sb, 1);
+    sb->data[sb->len++] = c;
+}
+
+CORVUSDEF void sbcatf(StrBuf *sb, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    int len = vsnprintf(NULL, 0, fmt, args);
+    va_end(args);
+    sbgrow_(sb, len + 1);
+    va_start(args, fmt);
+    vsnprintf(sb->data + sb->len, len + 1, fmt, args);
+    va_end(args);
+    sb->len += len;
+}
+
+CORVUSDEF void sbcatp(StrBuf *sb, const void *ptr, int len)
+{
+    sbgrow_(sb, len);
+    memcpy(sb->data + sb->len, ptr, len);
+    sb->len += len;
+}
+
+CORVUSDEF void sbcatv(StrBuf *sb, StrView sv)
+{
+    sbcatp(sb, sv.data, sv.len);
+}
+
+CORVUSDEF void sbinss(StrBuf *sb, int pos, const char *cstr)
+{
+    int len = (int)strlen(cstr);
+    sbgrow_(sb, len);
+    memmove(sb->data + pos + len, sb->data + pos, sb->len - pos);
+    memcpy(sb->data + pos, cstr, len);
+    sb->len += len;
+}
+
+CORVUSDEF void sbinsc(StrBuf *sb, int pos, char c)
+{
+    sbgrow_(sb, 1);
+    memmove(sb->data + pos + 1, sb->data + pos, sb->len - pos);
+    sb->data[pos] = c;
+    sb->len += 1;
+}
+
+CORVUSDEF void sbinsf(StrBuf *sb, int pos, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    int len = vsnprintf(NULL, 0, fmt, args);
+    va_end(args);
+    sbgrow_(sb, len + 1);
+    memmove(sb->data + pos + len, sb->data + pos, sb->len - pos);
+    va_start(args, fmt);
+    vsnprintf(sb->data + pos, len + 1, fmt, args);
+    va_end(args);
+    sb->len += len;
+}
+
+CORVUSDEF void sbinsp(StrBuf *sb, int pos, const void *ptr, int len)
+{
+    sbgrow_(sb, len);
+    memmove(sb->data + pos + len, sb->data + pos, sb->len - pos);
+    memcpy(sb->data + pos, ptr, len);
+    sb->len += len;
+}
+
+CORVUSDEF void sbinsv(StrBuf *sb, int pos, StrView sv)
+{
+    sbinsp(sb, pos, sv.data, sv.len);
+}
+
+CORVUSDEF void sbdel(StrBuf *sb, int pos, int len)
+{
+    if (len < 0) len = (sb->len + len) - pos;
+    memmove(sb->data + pos, sb->data + pos + len, sb->len - pos - len);
+    sb->len -= len;
+}
+
+CORVUSDEF void sbset(StrBuf *sb, int pos, char c)
+{
+    sb->data[pos] = c;
+}
+
+CORVUSDEF void sbrev(StrBuf *sb)
+{
+    for (int i = 0, j = sb->len - 1; i < j; i++, j--) {
+        char t = sb->data[i];
+        sb->data[i] = sb->data[j];
+        sb->data[j] = t;
+    }
+}
+
+CORVUSDEF void sbrep(StrBuf *sb, const char *cstr, int times)
+{
+    int len = (int)strlen(cstr);
+    sbgrow_(sb, len * times);
+    for (int i = 0; i < times; i++) {
+        memcpy(sb->data + sb->len, cstr, len);
+        sb->len += len;
+    }
+}
+
+CORVUSDEF void sbjoin(StrBuf *sb, const char *sep, ... /* NULL */)
+{
+    va_list args;
+    va_start(args, sep);
+
+    const char *str = va_arg(args, const char *);
+    if (str == NULL) {
+        va_end(args);
+        return;
+    }
+
+    sbcats(sb, str);
+
+    while ((str = va_arg(args, const char *)) != NULL) {
+        sbcats(sb, sep);
+        sbcats(sb, str);
+    }
+
+    va_end(args);
+}
+
+CORVUSDEF void sbtoupper(StrBuf *sb)
+{
+    for (int i = 0; i < sb->len; i++) {
+        if (sb->data[i] >= 'a' && sb->data[i] <= 'z') {
+            sb->data[i] -= 'a' - 'A';
+        }
+    }
+}
+
+CORVUSDEF void sbtolower(StrBuf *sb)
+{
+    for (int i = 0; i < sb->len; i++) {
+        if (sb->data[i] >= 'A' && sb->data[i] <= 'Z') {
+            sb->data[i] += 'a' - 'A';
+        }
+    }
+}
+
+CORVUSDEF const char *sbtocstr(StrBuf *sb)
+{
+    sbgrow_(sb, 1);
+    sb->data[sb->len] = '\0';
+    return sb->data;
+}
+
+CORVUSDEF StrView sbtoview(const StrBuf *sb)
+{
+    return (StrView) { .data = sb->data, .len = sb->len };
+}
+
 #endif /* CORVUS_IMPLEMENTATION */
