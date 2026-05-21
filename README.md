@@ -1,12 +1,12 @@
-<div align="center">
-  <img src="https://raw.githubusercontent.com/dylaris/corvus.h/main/assets/icon.png" alt="corvus" width="120"/>
+# corvus.h
 
-  # corvus.h
+<p align="center">
+  <img src="./assets/icon.png">
+</p>
 
-  **A header-only C library for generic containers and string utilities**
+**A header-only C library for generic containers and string utilities**
 
-  ```c
-  #define CORVUS_IMPLEMENTATION
-  #include "corvus.h"
-  ```
-</div>
+```c
+#define CORVUS_IMPLEMENTATION
+#include "corvus.h"
+```
