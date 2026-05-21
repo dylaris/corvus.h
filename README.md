@@ -1,7 +1,7 @@
 # corvus.h
 
 <p align="center">
-  <img src="./assets/corvus.png" width="120"/>
+  <img src="./assets/corvus.jpg" width="120"/>
 </p>
 
 **A header-only C library for generic containers and string utilities**
