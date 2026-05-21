@@ -104,6 +104,7 @@ typedef struct {
 } while (0)
 #define arrclear(a) do { CORVUS_ASSERT(a); arrhdr(a)->len = 0; } while (0)
 #define arrfree(a) do { CORVUS_ASSERT(a); CORVUS_FREE(arrhdr(a)); } while (0)
+#define arroff(a, p) ((int)((p)-(a)))
 #define arrbegin(a) (CORVUS_ASSERT(a), a)
 #define arrend(a) (CORVUS_ASSERT(a), (a)+arrlen(a))
 #define arrforeach(T, a) for (T *it = arrbegin(a); it < arrend(a); it++)
@@ -121,17 +122,40 @@ typedef struct {
     int cap;
 } StrBuf;
 
-CORVUSDEF StrView svfromcsr(const char *cstr);
+typedef struct {
+    union {
+        char ch;
+        const char *cstr;
+        struct {
+            const void *ptr;
+            int len;
+        };
+        StrView sv;
+    };
+    bool cont;
+} StrFindOpt;
+
+#define svfmt "%.*s"
+#define svarg(sv) (sv).len, (sv).data
+CORVUSDEF StrView svfromcstr(const char *cstr);
 CORVUSDEF StrView svfromsbuf(const StrBuf *sb);
 CORVUSDEF bool sveqv(StrView a, StrView b);
 CORVUSDEF bool sveqs(StrView sv, const char *cstr);
 CORVUSDEF bool sveqf(StrView sv, const char *fmt, ...);
 CORVUSDEF bool sveqp(StrView sv, const void *p, int len);
 CORVUSDEF StrView svsub(StrView sv, int start, int len);
-CORVUSDEF int svfinds(StrView sv, const char *cstr);
-CORVUSDEF int svfindc(StrView sv, char c);
-CORVUSDEF int svfindp(StrView sv, const void *p, int len);
-CORVUSDEF int svfindv(StrView sv, StrView sub);
+#define svfinds(sv, ...) svfinds_opt(sv, (StrFindOpt){__VA_ARGS__})
+#define svfindc(sv, ...) svfindc_opt(sv, (StrFindOpt){__VA_ARGS__})
+#define svfindp(sv, ...) svfindp_opt(sv, (StrFindOpt){__VA_ARGS__})
+#define svfindv(sv, ...) svfindv_opt(sv, (StrFindOpt){__VA_ARGS__})
+CORVUSDEF int svfinds_opt(StrView sv, StrFindOpt opt);
+CORVUSDEF int svfindc_opt(StrView sv, StrFindOpt opt);
+CORVUSDEF int svfindp_opt(StrView sv, StrFindOpt opt);
+CORVUSDEF int svfindv_opt(StrView sv, StrFindOpt opt);
+CORVUSDEF Array(StrView) svtoks(StrView sv, const char *cstr);
+CORVUSDEF Array(StrView) svtokc(StrView sv, char ch);
+CORVUSDEF Array(StrView) svtokp(StrView sv, const void *ptr, int len);
+CORVUSDEF Array(StrView) svtokv(StrView sv, StrView sep);
 CORVUSDEF StrView svtrim(StrView sv);
 CORVUSDEF StrView svtriml(StrView sv);
 CORVUSDEF StrView svtrimr(StrView sv);
@@ -338,7 +362,7 @@ typedef enum {
 
 #ifdef CORVUS_IMPLEMENTATION
 
-CORVUSDEF StrView svfromcsr(const char *cstr)
+CORVUSDEF StrView svfromcstr(const char *cstr)
 {
     return (StrView) {
         .data = cstr,
@@ -403,68 +427,150 @@ CORVUSDEF StrView svsub(StrView sv, int start, int len)
     };
 }
 
-CORVUSDEF int svfindc(StrView sv, char c)
+CORVUSDEF int svfindc_opt(StrView sv, StrFindOpt opt)
 {
-    struct { int pos; char c; } state = { 0, c };
-    if (c != -1) {
+    static struct { int pos; char ch; } state;
+    if (!opt.cont) {
         /* reset state */
         state.pos = 0;
-        state.c = c;
+        state.ch  = opt.ch;
     }
 
     for (int i = state.pos; i < sv.len; i++) {
-        if (sv.data[i] != c) continue;
-        return state.pos = i;
+        if (sv.data[i] != state.ch) continue;
+        state.pos = i + 1;
+        return i;
     }
     return -1;
 }
 
-#define _sv_find_part_ \
+#define _sv_find_part_(ptr_, len_) \
+    static struct { int pos; const void *ptr; int len; } state; \
+    if (!opt.cont) { \
+        state.pos = 0; \
+        state.ptr = (ptr_); \
+        state.len = (len_); \
+    } \
     if (state.len == 0 || state.len > sv.len) return -1; \
     for (int i = state.pos; i < sv.len; i++) { \
-        if (memcmp(sv.data + i, state.p, state.len) == 0) { \
-            return state.pos = i; \
+        if (memcmp(sv.data + i, state.ptr, state.len) == 0) { \
+            state.pos = i + state.len; \
+            return i; \
         } \
     } \
     return -1;
 
-CORVUSDEF int svfinds(StrView sv, const char *cstr)
+CORVUSDEF int svfinds_opt(StrView sv, StrFindOpt opt)
 {
-    struct { int pos; const void *p; int len; } state;
-    if (cstr != NULL) {
-        /* reset state */
-        state.pos = 0;
-        state.p   = cstr;
-        state.len = strlen(cstr);
-    }
-    _sv_find_part_
+    _sv_find_part_(opt.cstr, strlen(opt.cstr))
 }
 
-CORVUSDEF int svfindv(StrView sv, StrView sub)
+CORVUSDEF int svfindv_opt(StrView sv, StrFindOpt opt)
 {
-    static struct { int pos; const void *p; int len; } state;
-    if (sub.data != NULL) {
-        /* reset state */
-        state.pos = 0;
-        state.p   = sub.data;
-        state.len = sub.len;
-    }
-    _sv_find_part_
+    _sv_find_part_(opt.sv.data, opt.sv.len)
 }
 
-CORVUSDEF int svfindp(StrView sv, const void *p, int len)
+CORVUSDEF int svfindp_opt(StrView sv, StrFindOpt opt)
 {
-    static struct { int pos; const void *p; int len; } state;
-    if (p != NULL) {
-        /* reset state */
-        state.pos = 0;
-        state.p   = p;
-        state.len = len;
-    }
-    _sv_find_part_
+    _sv_find_part_(opt.ptr, opt.len)
 }
 
 #undef _sv_find_part_
+
+CORVUSDEF Array(StrView) svtoks(StrView sv, const char *cstr)
+{
+    Array(StrView) toks = NULL;
+    int len = strlen(cstr);
+    int left = 0, right = svfinds(sv, .cstr = cstr);
+    if (right == -1) right = sv.len;
+
+    /* append first token */
+    StrView tok = svsub(sv, left, right - left);
+    arrpush(toks, tok);
+    left = right + len;
+
+    /* append remaining tokens */
+    while (left < sv.len) {
+        right = svfinds(sv, .cont = true);
+        if (right == -1) right = sv.len;
+        tok = svsub(sv, left, right - left);
+        arrpush(toks, tok);
+        left = right + len;
+    }
+
+    return toks;
+}
+
+CORVUSDEF Array(StrView) svtokc(StrView sv, char ch)
+{
+    Array(StrView) toks = NULL;
+    int len = 1;
+    int left = 0, right = svfindc(sv, .ch = ch);
+    if (right == -1) right = sv.len;
+
+    /* append first token */
+    StrView tok = svsub(sv, left, right - left);
+    arrpush(toks, tok);
+    left = right + len;
+
+    /* append remaining tokens */
+    while (left < sv.len) {
+        right = svfindc(sv, .cont = true);
+        if (right == -1) right = sv.len;
+        tok = svsub(sv, left, right - left);
+        arrpush(toks, tok);
+        left = right + len;
+    }
+
+    return toks;
+}
+
+CORVUSDEF Array(StrView) svtokp(StrView sv, const void *ptr, int len)
+{
+    Array(StrView) toks = NULL;
+    int left = 0, right = svfindp(sv, .ptr = ptr, .len = len);
+    if (right == -1) right = sv.len;
+
+    /* append first token */
+    StrView tok = svsub(sv, left, right - left);
+    arrpush(toks, tok);
+    left = right + len;
+
+    /* append remaining tokens */
+    while (left < sv.len) {
+        right = svfindp(sv, .cont = true);
+        if (right == -1) right = sv.len;
+        tok = svsub(sv, left, right - left);
+        arrpush(toks, tok);
+        left = right + len;
+    }
+
+    return toks;
+}
+
+CORVUSDEF Array(StrView) svtokv(StrView sv, StrView sep)
+{
+    Array(StrView) toks = NULL;
+    int len = sep.len;
+    int left = 0, right = svfindv(sv, .sv = sep);
+    if (right == -1) right = sv.len;
+
+    /* append first token */
+    StrView tok = svsub(sv, left, right - left);
+    arrpush(toks, tok);
+    left = right + len;
+
+    /* append remaining tokens */
+    while (left < sv.len) {
+        right = svfindv(sv, .cont = true);
+        if (right == -1) right = sv.len;
+        tok = svsub(sv, left, right - left);
+        arrpush(toks, tok);
+        left = right + len;
+    }
+
+    return toks;
+}
 
 static inline bool iswhitespace(char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
 
