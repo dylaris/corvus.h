@@ -1,26 +1,27 @@
-#define CORVUS_IMPLEMENTATION
-#include "corvus.h"
+#define KUT_IMPLEMENTATION
+#include "kut.h"
 
 int main(void)
 {
     const char *str = "  nice ;to ;see ;you  \r\n";
 
-    StrView sv = svfromcstr(str);
-    printf("'%.*s'\n", sv.len, sv.data);
+    struct string_view sv = svfromcstr(str);
+    printf("'" svfmt "'\n", svarg(sv));
 
     sv = svchopn(sv, "\n\r");
-    printf("'%.*s'\n", sv.len, sv.data);
+    printf("'" svfmt "'\n", svarg(sv));
 
     sv = svtrim(sv);
-    printf("'%.*s'\n", sv.len, sv.data);
+    printf("'" svfmt "'\n", svarg(sv));
 
-    // Array(StrView) words = svtoks(sv, " ;");
-    // Array(StrView) words = svtokv(sv, svfromcstr(" ;"));
-    Array(StrView) words = svtokc(sv, ';');
+    // struct string_view *words = svtoks(sv, " ;");
+    // struct string_view *words = svtokv(sv, svfromcstr(" ;"));
+    struct string_view *words = svtokc(sv, ';');
 
-    arrforeach(StrView, words) {
+    arrforeach(struct string_view, words) {
         printf("[%d] '" svfmt "'\n", arroff(words, it), svarg(*it));
     }
+    arrfree(words);
 
     return 0;
 }

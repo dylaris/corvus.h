@@ -1,9 +1,9 @@
-#define CORVUS_IMPLEMENTATION
-#include "corvus.h"
+#define KUT_IMPLEMENTATION
+#include "kut.h"
 
 int main(void)
 {
-    RingBuffer(int) rbuf = NULL;
+    int *rbuf = KUT_RING_BUFFER_INITIALIZER;
     rbufinit(rbuf, 32);
 
     printf("len: %d\n", rbuflen(rbuf));

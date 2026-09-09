@@ -77,18 +77,18 @@ KUT_API void *kut_arrkeep_impl(void *a /* nullable */, int elemsz, int cap);
 
 /* string view & string buffer */
 
-struct string_view {
+struct kut_string_view {
     const char *data;
     int len;
 };
 
-struct string_buffer {
+struct kut_stkut_ring_buffer {
     char *data;
     int len;
     int cap;
 };
 
-struct string_find_option {
+struct kut_string_find_option {
     union {
         char ch;
         const char *cstr;
@@ -96,74 +96,74 @@ struct string_find_option {
             const void *ptr;
             int len;
         };
-        struct string_view sv;
+        struct kut_string_view sv;
     };
     bool cont;
 };
 
-#define KUT_SVFMT "%.*s"
-#define KUT_SVARG(sv) (sv).len, (sv).data
-KUT_API struct string_view kut_svfromcstr(const char *cstr);
-KUT_API struct string_view kut_svfromsbuf(const struct string_buffer *sb);
-KUT_API bool kut_sveqs(struct string_view sv, const char *cstr);
-KUT_API bool kut_sveqc(struct string_view sv, char ch);
-KUT_API bool kut_sveqp(struct string_view sv, const void *ptr, int len);
-KUT_API bool kut_sveqv(struct string_view a, struct string_view b);
-KUT_API struct string_view kut_svsub(struct string_view sv, int start, int len);
-#define kut_svfinds(sv, ...) kut_svfinds_impl((sv), (struct string_find_option){__VA_ARGS__})
-#define kut_svfindc(sv, ...) kut_svfindc_impl((sv), (struct string_find_option){__VA_ARGS__})
-#define kut_svfindp(sv, ...) kut_svfindp_impl((sv), (struct string_find_option){__VA_ARGS__})
-#define kut_svfindv(sv, ...) kut_svfindv_impl((sv), (struct string_find_option){__VA_ARGS__})
-KUT_API int kut_svfinds_impl(struct string_view sv, struct string_find_option opt);
-KUT_API int kut_svfindc_impl(struct string_view sv, struct string_find_option opt);
-KUT_API int kut_svfindp_impl(struct string_view sv, struct string_find_option opt);
-KUT_API int kut_svfindv_impl(struct string_view sv, struct string_find_option opt);
-KUT_API struct string_view *kut_svtoks(struct string_view sv, const char *cstr);
-KUT_API struct string_view *kut_svtokc(struct string_view sv, char ch);
-KUT_API struct string_view *kut_svtokp(struct string_view sv, const void *ptr, int len);
-KUT_API struct string_view *kut_svtokv(struct string_view sv, struct string_view sep);
-KUT_API struct string_view kut_svtrim(struct string_view sv);
-KUT_API struct string_view kut_svtriml(struct string_view sv);
-KUT_API struct string_view kut_svtrimr(struct string_view sv);
-KUT_API struct string_view kut_svchop(struct string_view sv, char c);
-KUT_API struct string_view kut_svchopn(struct string_view sv, const char *cs);
-KUT_API bool kut_svprefix(struct string_view sv, struct string_view prefix);
-KUT_API bool kut_svsuffix(struct string_view sv, struct string_view suffix);
-KUT_API char *kut_svtocstr(const struct string_view sv);
+#define kut_svfmt "%.*s"
+#define kut_svarg(sv) (sv).len, (sv).data
+KUT_API struct kut_string_view kut_svfromcstr(const char *cstr);
+KUT_API struct kut_string_view kut_svfromsbuf(const struct kut_stkut_ring_buffer *sb);
+KUT_API bool kut_sveqs(struct kut_string_view sv, const char *cstr);
+KUT_API bool kut_sveqc(struct kut_string_view sv, char ch);
+KUT_API bool kut_sveqp(struct kut_string_view sv, const void *ptr, int len);
+KUT_API bool kut_sveqv(struct kut_string_view a, struct kut_string_view b);
+KUT_API struct kut_string_view kut_svsub(struct kut_string_view sv, int start, int len);
+#define kut_svfinds(sv, ...) kut_svfinds_impl((sv), (struct kut_string_find_option){__VA_ARGS__})
+#define kut_svfindc(sv, ...) kut_svfindc_impl((sv), (struct kut_string_find_option){__VA_ARGS__})
+#define kut_svfindp(sv, ...) kut_svfindp_impl((sv), (struct kut_string_find_option){__VA_ARGS__})
+#define kut_svfindv(sv, ...) kut_svfindv_impl((sv), (struct kut_string_find_option){__VA_ARGS__})
+KUT_API int kut_svfinds_impl(struct kut_string_view sv, struct kut_string_find_option opt);
+KUT_API int kut_svfindc_impl(struct kut_string_view sv, struct kut_string_find_option opt);
+KUT_API int kut_svfindp_impl(struct kut_string_view sv, struct kut_string_find_option opt);
+KUT_API int kut_svfindv_impl(struct kut_string_view sv, struct kut_string_find_option opt);
+KUT_API struct kut_string_view *kut_svtoks(struct kut_string_view sv, const char *cstr);
+KUT_API struct kut_string_view *kut_svtokc(struct kut_string_view sv, char ch);
+KUT_API struct kut_string_view *kut_svtokp(struct kut_string_view sv, const void *ptr, int len);
+KUT_API struct kut_string_view *kut_svtokv(struct kut_string_view sv, struct kut_string_view sep);
+KUT_API struct kut_string_view kut_svtrim(struct kut_string_view sv);
+KUT_API struct kut_string_view kut_svtriml(struct kut_string_view sv);
+KUT_API struct kut_string_view kut_svtrimr(struct kut_string_view sv);
+KUT_API struct kut_string_view kut_svchop(struct kut_string_view sv, char c);
+KUT_API struct kut_string_view kut_svchopn(struct kut_string_view sv, const char *cs);
+KUT_API bool kut_svprefix(struct kut_string_view sv, struct kut_string_view prefix);
+KUT_API bool kut_svsuffix(struct kut_string_view sv, struct kut_string_view suffix);
+KUT_API char *kut_svtocstr(const struct kut_string_view sv);
 #define kut_svbegin(sv) (KUT_ASSERT((sv).data), (sv).data)
 #define kut_svend(sv) (KUT_ASSERT((sv).data), (sv).data + (sv).len)
 #define kut_svforeach(sv) for (const char *it = kut_svbegin(sv); it < kut_svend(sv); it++)
 
-KUT_API void kut_sbclear(struct string_buffer *sb);
-KUT_API void kut_sbfree(struct string_buffer *sb);
-KUT_API void kut_sbkeep(struct string_buffer *sb, int sz);
-KUT_API struct string_buffer kut_sbfmt(const char *fmt, ...);
-KUT_API void kut_sbcatsn(struct string_buffer *sb, ... /* NULL */);
-KUT_API void kut_sbcatcn(struct string_buffer *sb, ... /* -1 */);
-KUT_API void kut_sbcats(struct string_buffer *sb, const char *cstr);
-KUT_API void kut_sbcatc(struct string_buffer *sb, char c);
-KUT_API void kut_sbcatp(struct string_buffer *sb, const void *ptr, int len);
-KUT_API void kut_sbcatv(struct string_buffer *sb, struct string_view sv);
-KUT_API void kut_sbinss(struct string_buffer *sb, int pos, const char *cstr);
-KUT_API void kut_sbinsc(struct string_buffer *sb, int pos, char c);
-KUT_API void kut_sbinsp(struct string_buffer *sb, int pos, const void *ptr, int len);
-KUT_API void kut_sbinsv(struct string_buffer *sb, int pos, struct string_view sv);
-KUT_API void kut_sbdel(struct string_buffer *sb, int pos, int len);
-KUT_API void kut_sbset(struct string_buffer *sb, int pos, char c);
-KUT_API void kut_sbreverse(struct string_buffer *sb);
-KUT_API void kut_sbrepeat(struct string_buffer *sb, const char *cstr, int times);
-KUT_API void kut_sbjoin(struct string_buffer *sb, const char *sep, ... /* NULL */);
-KUT_API void kut_sbtoupper(struct string_buffer *sb);
-KUT_API void kut_sbtolower(struct string_buffer *sb);
-KUT_API const char *kut_sbtocstr(struct string_buffer *sb);
-KUT_API struct string_view kut_sbtoview(const struct string_buffer *sb);
+KUT_API void kut_sbclear(struct kut_stkut_ring_buffer *sb);
+KUT_API void kut_sbfree(struct kut_stkut_ring_buffer *sb);
+KUT_API void kut_sbkeep(struct kut_stkut_ring_buffer *sb, int sz);
+KUT_API struct kut_stkut_ring_buffer kut_sbfmt(const char *fmt, ...);
+KUT_API void kut_sbcatsn(struct kut_stkut_ring_buffer *sb, ... /* NULL */);
+KUT_API void kut_sbcatcn(struct kut_stkut_ring_buffer *sb, ... /* -1 */);
+KUT_API void kut_sbcats(struct kut_stkut_ring_buffer *sb, const char *cstr);
+KUT_API void kut_sbcatc(struct kut_stkut_ring_buffer *sb, char c);
+KUT_API void kut_sbcatp(struct kut_stkut_ring_buffer *sb, const void *ptr, int len);
+KUT_API void kut_sbcatv(struct kut_stkut_ring_buffer *sb, struct kut_string_view sv);
+KUT_API void kut_sbinss(struct kut_stkut_ring_buffer *sb, int pos, const char *cstr);
+KUT_API void kut_sbinsc(struct kut_stkut_ring_buffer *sb, int pos, char c);
+KUT_API void kut_sbinsp(struct kut_stkut_ring_buffer *sb, int pos, const void *ptr, int len);
+KUT_API void kut_sbinsv(struct kut_stkut_ring_buffer *sb, int pos, struct kut_string_view sv);
+KUT_API void kut_sbdel(struct kut_stkut_ring_buffer *sb, int pos, int len);
+KUT_API void kut_sbset(struct kut_stkut_ring_buffer *sb, int pos, char c);
+KUT_API void kut_sbreverse(struct kut_stkut_ring_buffer *sb);
+KUT_API void kut_sbrepeat(struct kut_stkut_ring_buffer *sb, const char *cstr, int times);
+KUT_API void kut_sbjoin(struct kut_stkut_ring_buffer *sb, const char *sep, ... /* NULL */);
+KUT_API void kut_sbtoupper(struct kut_stkut_ring_buffer *sb);
+KUT_API void kut_sbtolower(struct kut_stkut_ring_buffer *sb);
+KUT_API const char *kut_sbtocstr(struct kut_stkut_ring_buffer *sb);
+KUT_API struct kut_string_view kut_sbtoview(const struct kut_stkut_ring_buffer *sb);
 #define kut_sbbegin(sb) (KUT_ASSERT((sb).data), (sb).data)
 #define kut_sbend(sb) (KUT_ASSERT((sb).data), (sb).data + (sb).len)
 #define kut_sbforeach(sb) for (char *it = kut_sbbegin(sb); it < kut_sbend(sb); it++)
 
 /* ring buffer */
 
-struct ring_buffer_header {
+struct kut_ring_buffer_header {
     int wptr;
     int rptr;
     int len;
@@ -171,12 +171,12 @@ struct ring_buffer_header {
 };
 
 #define KUT_RING_BUFFER_INITIALIZER NULL
-#define kut_rbufhdr(r) ((struct ring_buffer_header*)((char*)(r) - sizeof(struct ring_buffer_header)))
+#define kut_rbufhdr(r) ((struct kut_ring_buffer_header*)((char*)(r) - sizeof(struct kut_ring_buffer_header)))
 #define kut_rbuflen(r) ((r) ? kut_rbufhdr(r)->len : 0)
 #define kut_rbufcap(r) ((r) ? kut_rbufhdr(r)->cap : 0)
 #define kut_rbufinit(r, sz) do { \
     if (!(r)) { \
-        struct ring_buffer_header *h; \
+        struct kut_ring_buffer_header *h; \
         h = KUT_REALLOC(NULL, (sz) * sizeof(*(r))); \
         KUT_ASSERT(h && "run out of memory"); \
         h->wptr = 0; \
@@ -188,13 +188,13 @@ struct ring_buffer_header {
 } while (0)
 #define kut_rbuffree(r) do { KUT_ASSERT(r); KUT_FREE(kut_rbufhdr(r)); } while (0)
 #define kut_rbufclear(r) do { \
-    struct ring_buffer_header *h; \
+    struct kut_ring_buffer_header *h; \
     KUT_ASSERT(r); \
     h = kut_rbufhdr(r); \
     h->wptr = h->rptr = h->len = 0; \
 } while (0)
 #define kut_rbufput(r, e) do { \
-    struct ring_buffer_header *h; \
+    struct kut_ring_buffer_header *h; \
     KUT_ASSERT(r); \
     h = kut_rbufhdr(r); \
     (r)[kut_wrapinc_post(&h->wptr, h->cap)] = (e); \
@@ -214,11 +214,11 @@ struct kut_deque_header {
     int cap;
 };
 
-#define kut_deque(T) T *
+#define KUT_DEQUE_INITIALIZER NULL
 #define kut_deqhdr(q) ((struct kut_deque_header*)((char*)(q) - sizeof(struct kut_deque_header)))
 #define kut_deqlen(q) ((q) ? kut_deqhdr(q)->len : 0)
 #define kut_deqcap(q) ((q) ? kut_deqhdr(q)->cap : 0)
-#define kut_deqkeep(a, cap) do { (q) = kut_deqkeep_impl((q), sizeof(*(q)), (cap)); } while (0)
+#define kut_deqkeep(q, cap) do { (q) = kut_deqkeep_impl((q), sizeof(*(q)), (cap)); } while (0)
 #define kut_deqfront(q) (KUT_ASSERT(q), (q)[kut_deqhdr(q)->front])
 #define kut_deqrear(q) (KUT_ASSERT(q), (q)[kut_wrapdec(kut_deqhdr(q)->rear, kut_deqcap(q))])
 #define kut_deqpushback(q, e) do { \
@@ -267,6 +267,10 @@ KUT_API void *kut_deqkeep_impl(void *q /* nullable */, int elemsz, int cap);
 #define kut_swap(T, a, b)   do { T t = (a); (a) = (b); (b) = t; } while (0)
 #define kut_wrapinc(x, n)   ((x) + 1 == (n) ? 0 : (x) + 1)
 #define kut_wrapdec(x, n)   ((x) == 0 ? (n) - 1 : (x) - 1)
+KUT_API int kut_wrapinc_post(int *x, int n);
+KUT_API int kut_wrapinc_pre(int *x, int n);
+KUT_API int kut_wrapdec_post(int *x, int n);
+KUT_API int kut_wrapdec_pre(int *x, int n);
 
 /* memory */
 
@@ -315,6 +319,7 @@ KUT_API void *kut_arrkeep_impl(void *a /* nullable */, int elemsz, int cap)
     if (kut_arrcap(a) >= cap) return a;
 
     first = a == NULL;
+    cap = first ? KUT_INIT_CAPACITY : cap;
     h = first ? NULL : kut_arrhdr(a);
     h = KUT_REALLOC(h, sizeof(struct kut_array_header) + cap * elemsz);
     KUT_ASSERT(h && "run out of memory");
@@ -330,11 +335,12 @@ KUT_API void *kut_deqkeep_impl(void *q /* nullable */, int elemsz, int cap)
     bool first;
     struct kut_deque_header *h;
 
-    if (kut_deqcap(q) >= cap) return h;
+    if (kut_deqcap(q) >= cap) return q;
 
     first = q == NULL;
+    cap = first ? KUT_INIT_CAPACITY : cap;
     h = first ? NULL : kut_deqhdr(q);
-    h = KUT_REALLOC(h, sizeof(struct kut_deque_header) + newcap * elemsz);
+    h = KUT_REALLOC(h, sizeof(struct kut_deque_header) + cap * elemsz);
     KUT_ASSERT(h && "run out of memory");
 
     if (first) {
@@ -350,59 +356,59 @@ KUT_API void *kut_deqkeep_impl(void *q /* nullable */, int elemsz, int cap)
     return (void *)(h + 1);
 }
 
-KUT_API struct string_view kut_svfromcstr(const char *cstr)
+KUT_API struct kut_string_view kut_svfromcstr(const char *cstr)
 {
-    struct string_view result = {
+    struct kut_string_view result = {
         .data = cstr,
         .len = (int)strlen(cstr)
     };
     return result;
 }
 
-KUT_API struct string_view kut_svfromsbuf(const struct string_buffer *sb)
+KUT_API struct kut_string_view kut_svfromsbuf(const struct kut_stkut_ring_buffer *sb)
 {
-    struct string_view result = {
+    struct kut_string_view result = {
         .data = sb->data,
         .len = sb->len
     };
     return result;
 }
 
-KUT_API bool kut_sveqv(struct string_view a, struct string_view b)
+KUT_API bool kut_sveqv(struct kut_string_view a, struct kut_string_view b)
 {
     if (a.len != b.len) return false;
     return memcmp(a.data, b.data, a.len) == 0;
 }
 
-KUT_API bool kut_sveqs(struct string_view sv, const char *cstr)
+KUT_API bool kut_sveqs(struct kut_string_view sv, const char *cstr)
 {
     int len = (int)strlen(cstr);
     if (sv.len != len) return false;
     return memcmp(sv.data, cstr, len) == 0;
 }
 
-KUT_API bool kut_sveqc(struct string_view sv, char ch)
+KUT_API bool kut_sveqc(struct kut_string_view sv, char ch)
 {
     if (sv.len != 1) return false;
     return *sv.data == ch;
 }
 
-KUT_API bool kut_sveqp(struct string_view sv, const void *ptr, int len)
+KUT_API bool kut_sveqp(struct kut_string_view sv, const void *ptr, int len)
 {
     if (sv.len != len) return false;
     return memcmp(sv.data, ptr, len) == 0;
 }
 
-KUT_API struct string_view kut_svsub(struct string_view sv, int start, int len)
+KUT_API struct kut_string_view kut_svsub(struct kut_string_view sv, int start, int len)
 {
-    struct string_view result = {
+    struct kut_string_view result = {
         .data = sv.data + start,
         .len = len
     };
     return result;
 }
 
-KUT_API int kut_svfindc_impl(struct string_view sv, struct string_find_option opt)
+KUT_API int kut_svfindc_impl(struct kut_string_view sv, struct kut_string_find_option opt)
 {
     static struct { int pos; char ch; } state;
 
@@ -437,30 +443,30 @@ KUT_API int kut_svfindc_impl(struct string_view sv, struct string_find_option op
     } \
     return -1;
 
-KUT_API int kut_svfinds_impl(struct string_view sv, struct string_find_option opt)
+KUT_API int kut_svfinds_impl(struct kut_string_view sv, struct kut_string_find_option opt)
 {
     kut_sv_find_part_(opt.cstr, strlen(opt.cstr))
 }
 
-KUT_API int kut_svfindv_impl(struct string_view sv, struct string_find_option opt)
+KUT_API int kut_svfindv_impl(struct kut_string_view sv, struct kut_string_find_option opt)
 {
     kut_sv_find_part_(opt.sv.data, opt.sv.len)
 }
 
-KUT_API int kut_svfindp_impl(struct string_view sv, struct string_find_option opt)
+KUT_API int kut_svfindp_impl(struct kut_string_view sv, struct kut_string_find_option opt)
 {
     kut_sv_find_part_(opt.ptr, opt.len)
 }
 
 #undef kut_sv_find_part_
 
-KUT_API struct string_view *kut_svtoks(struct string_view sv, const char *cstr)
+KUT_API struct kut_string_view *kut_svtoks(struct kut_string_view sv, const char *cstr)
 {
-    struct string_view *toks;
+    struct kut_string_view *toks;
     int len;
     int left;
     int right;
-    struct string_view tok;
+    struct kut_string_view tok;
 
     toks = NULL;
     len = (int)strlen(cstr);
@@ -483,13 +489,13 @@ KUT_API struct string_view *kut_svtoks(struct string_view sv, const char *cstr)
     return toks;
 }
 
-KUT_API struct string_view *kut_svtokc(struct string_view sv, char ch)
+KUT_API struct kut_string_view *kut_svtokc(struct kut_string_view sv, char ch)
 {
-    struct string_view *toks;
+    struct kut_string_view *toks;
     int len;
     int left;
     int right;
-    struct string_view tok;
+    struct kut_string_view tok;
 
     toks = NULL;
     len = 1;
@@ -512,12 +518,12 @@ KUT_API struct string_view *kut_svtokc(struct string_view sv, char ch)
     return toks;
 }
 
-KUT_API struct string_view *kut_svtokp(struct string_view sv, const void *ptr, int len)
+KUT_API struct kut_string_view *kut_svtokp(struct kut_string_view sv, const void *ptr, int len)
 {
-    struct string_view *toks;
+    struct kut_string_view *toks;
     int left;
     int right;
-    struct string_view tok;
+    struct kut_string_view tok;
 
     toks = NULL;
     left = 0;
@@ -539,13 +545,13 @@ KUT_API struct string_view *kut_svtokp(struct string_view sv, const void *ptr, i
     return toks;
 }
 
-KUT_API struct string_view *kut_svtokv(struct string_view sv, struct string_view sep)
+KUT_API struct kut_string_view *kut_svtokv(struct kut_string_view sv, struct kut_string_view sep)
 {
-    struct string_view *toks;
+    struct kut_string_view *toks;
     int len;
     int left;
     int right;
-    struct string_view tok;
+    struct kut_string_view tok;
 
     toks = NULL;
     len = sep.len;
@@ -573,11 +579,11 @@ static inline bool kut_iswhitespace(char c)
     return c == ' ' || c == '\t' || c == '\r' || c == '\n';
 }
 
-KUT_API struct string_view kut_svtrim(struct string_view sv)
+KUT_API struct kut_string_view kut_svtrim(struct kut_string_view sv)
 {
     int start;
     int end;
-    struct string_view result;
+    struct kut_string_view result;
 
     start = 0;
     end = sv.len;
@@ -588,10 +594,10 @@ KUT_API struct string_view kut_svtrim(struct string_view sv)
     return result;
 }
 
-KUT_API struct string_view kut_svtriml(struct string_view sv)
+KUT_API struct kut_string_view kut_svtriml(struct kut_string_view sv)
 {
     int start;
-    struct string_view result;
+    struct kut_string_view result;
 
     start = 0;
     while (start < sv.len && kut_iswhitespace(sv.data[start])) start++;
@@ -600,10 +606,10 @@ KUT_API struct string_view kut_svtriml(struct string_view sv)
     return result;
 }
 
-KUT_API struct string_view kut_svtrimr(struct string_view sv)
+KUT_API struct kut_string_view kut_svtrimr(struct kut_string_view sv)
 {
     int end;
-    struct string_view result;
+    struct kut_string_view result;
 
     end = sv.len;
     while (end > 0 && kut_iswhitespace(sv.data[end - 1])) end--;
@@ -612,10 +618,10 @@ KUT_API struct string_view kut_svtrimr(struct string_view sv)
     return result;
 }
 
-KUT_API struct string_view kut_svchop(struct string_view sv, char c)
+KUT_API struct kut_string_view kut_svchop(struct kut_string_view sv, char c)
 {
     int i;
-    struct string_view result;
+    struct kut_string_view result;
 
     i = sv.len;
     while (i > 0 && sv.data[i - 1] == c) i--;
@@ -624,12 +630,12 @@ KUT_API struct string_view kut_svchop(struct string_view sv, char c)
     return result;
 }
 
-KUT_API struct string_view kut_svchopn(struct string_view sv, const char *cs)
+KUT_API struct kut_string_view kut_svchopn(struct kut_string_view sv, const char *cs)
 {
     int i;
     bool found;
     const char *c;
-    struct string_view result;
+    struct kut_string_view result;
 
     i = sv.len;
     while (i > 0) {
@@ -648,19 +654,19 @@ KUT_API struct string_view kut_svchopn(struct string_view sv, const char *cs)
     return result;
 }
 
-KUT_API bool kut_svprefix(struct string_view sv, struct string_view prefix)
+KUT_API bool kut_svprefix(struct kut_string_view sv, struct kut_string_view prefix)
 {
     if (prefix.len > sv.len) return false;
     return memcmp(sv.data, prefix.data, prefix.len) == 0;
 }
 
-KUT_API bool kut_svsuffix(struct string_view sv, struct string_view suffix)
+KUT_API bool kut_svsuffix(struct kut_string_view sv, struct kut_string_view suffix)
 {
     if (suffix.len > sv.len) return false;
     return memcmp(sv.data + sv.len - suffix.len, suffix.data, suffix.len) == 0;
 }
 
-KUT_API char *kut_svtocstr(const struct string_view sv)
+KUT_API char *kut_svtocstr(const struct kut_string_view sv)
 {
     char *cstr = KUT_REALLOC(NULL, sv.len + 1);
     KUT_ASSERT(cstr && "run out of memory");
@@ -669,12 +675,12 @@ KUT_API char *kut_svtocstr(const struct string_view sv)
     return cstr;
 }
 
-KUT_API void kut_sbclear(struct string_buffer *sb)
+KUT_API void kut_sbclear(struct kut_stkut_ring_buffer *sb)
 {
     sb->len = 0;
 }
 
-KUT_API void kut_sbfree(struct string_buffer *sb)
+KUT_API void kut_sbfree(struct kut_stkut_ring_buffer *sb)
 {
     if (!sb->data) return;
     KUT_FREE(sb->data);
@@ -682,7 +688,7 @@ KUT_API void kut_sbfree(struct string_buffer *sb)
     sb->len = sb->cap = 0;
 }
 
-static void kut__sbgrow(struct string_buffer *sb, int needed)
+static void kut__sbgrow(struct kut_stkut_ring_buffer *sb, int needed)
 {
     int newcap;
     char *newdata;
@@ -696,12 +702,12 @@ static void kut__sbgrow(struct string_buffer *sb, int needed)
     sb->cap = newcap;
 }
 
-KUT_API void kut_sbkeep(struct string_buffer *sb, int sz)
+KUT_API void kut_sbkeep(struct kut_stkut_ring_buffer *sb, int sz)
 {
     if (sz > sb->cap) kut__sbgrow(sb, sz - sb->len);
 }
 
-KUT_API void kut_sbcatsn(struct string_buffer *sb, ... /* NULL */)
+KUT_API void kut_sbcatsn(struct kut_stkut_ring_buffer *sb, ... /* NULL */)
 {
     va_list args;
     const char *str;
@@ -715,7 +721,7 @@ KUT_API void kut_sbcatsn(struct string_buffer *sb, ... /* NULL */)
     va_end(args);
 }
 
-KUT_API void kut_sbcatcn(struct string_buffer *sb, ... /* -1 */)
+KUT_API void kut_sbcatcn(struct kut_stkut_ring_buffer *sb, ... /* -1 */)
 {
     va_list args;
     int c;
@@ -729,7 +735,7 @@ KUT_API void kut_sbcatcn(struct string_buffer *sb, ... /* -1 */)
     va_end(args);
 }
 
-KUT_API void kut_sbcats(struct string_buffer *sb, const char *cstr)
+KUT_API void kut_sbcats(struct kut_stkut_ring_buffer *sb, const char *cstr)
 {
     int len = (int)strlen(cstr);
     kut__sbgrow(sb, len);
@@ -737,17 +743,17 @@ KUT_API void kut_sbcats(struct string_buffer *sb, const char *cstr)
     sb->len += len;
 }
 
-KUT_API void kut_sbcatc(struct string_buffer *sb, char c)
+KUT_API void kut_sbcatc(struct kut_stkut_ring_buffer *sb, char c)
 {
     kut__sbgrow(sb, 1);
     sb->data[sb->len++] = c;
 }
 
-KUT_API struct string_buffer kut_sbfmt(const char *fmt, ...)
+KUT_API struct kut_stkut_ring_buffer kut_sbfmt(const char *fmt, ...)
 {
     va_list args;
     int len;
-    struct string_buffer sb;
+    struct kut_stkut_ring_buffer sb;
 
     memset(&sb, 0, sizeof(sb));
     va_start(args, fmt);
@@ -758,21 +764,22 @@ KUT_API struct string_buffer kut_sbfmt(const char *fmt, ...)
     vsnprintf(sb.data + sb.len, len + 1, fmt, args);
     va_end(args);
     sb.len += len;
+    return sb;
 }
 
-KUT_API void kut_sbcatp(struct string_buffer *sb, const void *ptr, int len)
+KUT_API void kut_sbcatp(struct kut_stkut_ring_buffer *sb, const void *ptr, int len)
 {
     kut__sbgrow(sb, len);
     memcpy(sb->data + sb->len, ptr, len);
     sb->len += len;
 }
 
-KUT_API void kut_sbcatv(struct string_buffer *sb, struct string_view sv)
+KUT_API void kut_sbcatv(struct kut_stkut_ring_buffer *sb, struct kut_string_view sv)
 {
     kut_sbcatp(sb, sv.data, sv.len);
 }
 
-KUT_API void kut_sbinss(struct string_buffer *sb, int pos, const char *cstr)
+KUT_API void kut_sbinss(struct kut_stkut_ring_buffer *sb, int pos, const char *cstr)
 {
     int len = (int)strlen(cstr);
     kut__sbgrow(sb, len);
@@ -781,7 +788,7 @@ KUT_API void kut_sbinss(struct string_buffer *sb, int pos, const char *cstr)
     sb->len += len;
 }
 
-KUT_API void kut_sbinsc(struct string_buffer *sb, int pos, char c)
+KUT_API void kut_sbinsc(struct kut_stkut_ring_buffer *sb, int pos, char c)
 {
     kut__sbgrow(sb, 1);
     memmove(sb->data + pos + 1, sb->data + pos, sb->len - pos);
@@ -789,7 +796,7 @@ KUT_API void kut_sbinsc(struct string_buffer *sb, int pos, char c)
     sb->len += 1;
 }
 
-KUT_API void kut_sbinsp(struct string_buffer *sb, int pos, const void *ptr, int len)
+KUT_API void kut_sbinsp(struct kut_stkut_ring_buffer *sb, int pos, const void *ptr, int len)
 {
     kut__sbgrow(sb, len);
     memmove(sb->data + pos + len, sb->data + pos, sb->len - pos);
@@ -797,24 +804,24 @@ KUT_API void kut_sbinsp(struct string_buffer *sb, int pos, const void *ptr, int 
     sb->len += len;
 }
 
-KUT_API void kut_sbinsv(struct string_buffer *sb, int pos, struct string_view sv)
+KUT_API void kut_sbinsv(struct kut_stkut_ring_buffer *sb, int pos, struct kut_string_view sv)
 {
     kut_sbinsp(sb, pos, sv.data, sv.len);
 }
 
-KUT_API void kut_sbdel(struct string_buffer *sb, int pos, int len)
+KUT_API void kut_sbdel(struct kut_stkut_ring_buffer *sb, int pos, int len)
 {
     if (len < 0) len = (sb->len + len) - pos;
     memmove(sb->data + pos, sb->data + pos + len, sb->len - pos - len);
     sb->len -= len;
 }
 
-KUT_API void kut_sbset(struct string_buffer *sb, int pos, char c)
+KUT_API void kut_sbset(struct kut_stkut_ring_buffer *sb, int pos, char c)
 {
     sb->data[pos] = c;
 }
 
-KUT_API void kut_sbreverse(struct string_buffer *sb)
+KUT_API void kut_sbreverse(struct kut_stkut_ring_buffer *sb)
 {
     for (int i = 0, j = sb->len - 1; i < j; i++, j--) {
         char t = sb->data[i];
@@ -823,7 +830,7 @@ KUT_API void kut_sbreverse(struct string_buffer *sb)
     }
 }
 
-KUT_API void kut_sbrepeat(struct string_buffer *sb, const char *cstr, int times)
+KUT_API void kut_sbrepeat(struct kut_stkut_ring_buffer *sb, const char *cstr, int times)
 {
     int len = (int)strlen(cstr);
     kut__sbgrow(sb, len * times);
@@ -833,7 +840,7 @@ KUT_API void kut_sbrepeat(struct string_buffer *sb, const char *cstr, int times)
     }
 }
 
-KUT_API void kut_sbjoin(struct string_buffer *sb, const char *sep, ... /* NULL */)
+KUT_API void kut_sbjoin(struct kut_stkut_ring_buffer *sb, const char *sep, ... /* NULL */)
 {
     va_list args;
     const char *str;
@@ -853,7 +860,7 @@ KUT_API void kut_sbjoin(struct string_buffer *sb, const char *sep, ... /* NULL *
     va_end(args);
 }
 
-KUT_API void kut_sbtoupper(struct string_buffer *sb)
+KUT_API void kut_sbtoupper(struct kut_stkut_ring_buffer *sb)
 {
     for (int i = 0; i < sb->len; i++) {
         if (sb->data[i] >= 'a' && sb->data[i] <= 'z') {
@@ -862,7 +869,7 @@ KUT_API void kut_sbtoupper(struct string_buffer *sb)
     }
 }
 
-KUT_API void kut_sbtolower(struct string_buffer *sb)
+KUT_API void kut_sbtolower(struct kut_stkut_ring_buffer *sb)
 {
     for (int i = 0; i < sb->len; i++) {
         if (sb->data[i] >= 'A' && sb->data[i] <= 'Z') {
@@ -871,20 +878,180 @@ KUT_API void kut_sbtolower(struct string_buffer *sb)
     }
 }
 
-KUT_API const char *kut_sbtocstr(struct string_buffer *sb)
+KUT_API const char *kut_sbtocstr(struct kut_stkut_ring_buffer *sb)
 {
     kut__sbgrow(sb, 1);
     sb->data[sb->len] = '\0';
     return sb->data;
 }
 
-KUT_API struct string_view kut_sbtoview(const struct string_buffer *sb)
+KUT_API struct kut_string_view kut_sbtoview(const struct kut_stkut_ring_buffer *sb)
 {
-    struct string_view result = {
+    struct kut_string_view result = {
         .data = sb->data,
         .len = sb->len
     };
     return result;
 }
 
+KUT_API int kut_wrapinc_post(int *x, int n)
+{
+    int oldx = *x;
+    *x = kut_wrapinc(oldx, n);
+    return oldx;
+}
+
+KUT_API int kut_wrapinc_pre(int *x, int n)
+{
+    int oldx = *x;
+    *x = kut_wrapinc(oldx, n);
+    return *x;
+}
+
+KUT_API int kut_wrapdec_post(int *x, int n)
+{
+    int oldx = *x;
+    *x = kut_wrapdec(oldx, n);
+    return oldx;
+}
+
+KUT_API int kut_wrapdec_pre(int *x, int n)
+{
+    int oldx = *x;
+    *x = kut_wrapdec(oldx, n);
+    return *x;
+}
+
 #endif /* KUT_IMPLEMENTATION */
+
+#ifndef KUT_NO_STRIP_PREFIX
+    #define array_header kut_array_header
+    #define arrhdr kut_arrhdr
+    #define arrlen kut_arrlen
+    #define arrcap kut_arrcap
+    #define arrkeep kut_arrkeep
+    #define arrpush kut_arrpush
+    #define arrpop kut_arrpop
+    #define arrshift kut_arrshift
+    #define arrunshift kut_arrunshift
+    #define arrback kut_arrback
+    #define arrfront kut_arrfront
+    #define arrclear kut_arrclear
+    #define arrfree kut_arrfree
+    #define arroff kut_arroff
+    #define arrbegin kut_arrbegin
+    #define arrend kut_arrend
+    #define arrforeach kut_arrforeach
+    #define arrkeep_impl kut_arrkeep_impl
+    #define svfmt kut_svfmt
+    #define svarg kut_svarg
+    #define string_view kut_string_view
+    #define stkut_ring_buffer kut_stkut_ring_buffer
+    #define string_find_option kut_string_find_option
+    #define svfromcstr kut_svfromcstr
+    #define svfromsbuf kut_svfromsbuf
+    #define sveqs kut_sveqs
+    #define sveqc kut_sveqc
+    #define sveqp kut_sveqp
+    #define sveqv kut_sveqv
+    #define svsub kut_svsub
+    #define svfinds kut_svfinds
+    #define svfindc kut_svfindc
+    #define svfindp kut_svfindp
+    #define svfindv kut_svfindv
+    #define svfinds_impl kut_svfinds_impl
+    #define svfindc_impl kut_svfindc_impl
+    #define svfindp_impl kut_svfindp_impl
+    #define svfindv_impl kut_svfindv_impl
+    #define svtoks kut_svtoks
+    #define svtokc kut_svtokc
+    #define svtokp kut_svtokp
+    #define svtokv kut_svtokv
+    #define svtrim kut_svtrim
+    #define svtriml kut_svtriml
+    #define svtrimr kut_svtrimr
+    #define svchop kut_svchop
+    #define svchopn kut_svchopn
+    #define svprefix kut_svprefix
+    #define svsuffix kut_svsuffix
+    #define svtocstr kut_svtocstr
+    #define svbegin kut_svbegin
+    #define svend kut_svend
+    #define svforeach kut_svforeach
+    #define sbclear kut_sbclear
+    #define sbfree kut_sbfree
+    #define sbkeep kut_sbkeep
+    #define sbfmt kut_sbfmt
+    #define sbcatsn kut_sbcatsn
+    #define sbcatcn kut_sbcatcn
+    #define sbcats kut_sbcats
+    #define sbcatc kut_sbcatc
+    #define sbcatp kut_sbcatp
+    #define sbcatv kut_sbcatv
+    #define sbinss kut_sbinss
+    #define sbinsc kut_sbinsc
+    #define sbinsp kut_sbinsp
+    #define sbinsv kut_sbinsv
+    #define sbdel kut_sbdel
+    #define sbset kut_sbset
+    #define sbreverse kut_sbreverse
+    #define sbrepeat kut_sbrepeat
+    #define sbjoin kut_sbjoin
+    #define sbtoupper kut_sbtoupper
+    #define sbtolower kut_sbtolower
+    #define sbtocstr kut_sbtocstr
+    #define sbtoview kut_sbtoview
+    #define sbbegin kut_sbbegin
+    #define sbend kut_sbend
+    #define sbforeach kut_sbforeach
+    #define ring_buffer_header kut_ring_buffer_header
+    #define rbufhdr kut_rbufhdr
+    #define rbuflen kut_rbuflen
+    #define rbufcap kut_rbufcap
+    #define rbufinit kut_rbufinit
+    #define rbuffree kut_rbuffree
+    #define rbufclear kut_rbufclear
+    #define rbufput kut_rbufput
+    #define rbufget kut_rbufget
+    #define rbufbegin kut_rbufbegin
+    #define rbufend kut_rbufend
+    #define rbufforeach kut_rbufforeach
+    #define deque_header kut_deque_header
+    #define deque kut_deque
+    #define deqhdr kut_deqhdr
+    #define deqlen kut_deqlen
+    #define deqcap kut_deqcap
+    #define deqkeep kut_deqkeep
+    #define deqfront kut_deqfront
+    #define deqrear kut_deqrear
+    #define deqpushback kut_deqpushback
+    #define deqpushfront kut_deqpushfront
+    #define deqpopback kut_deqpopback
+    #define deqpopfront kut_deqpopfront
+    #define deqfree kut_deqfree
+    #define deqclear kut_deqclear
+    #define deqbegin kut_deqbegin
+    #define deqend kut_deqend
+    #define deqforeach kut_deqforeach
+    #define deqkeep_impl kut_deqkeep_impl
+    #define max kut_max
+    #define min kut_min
+    #define clamp kut_clamp
+    #define abs kut_abs
+    #define sign kut_sign
+    #define swap kut_swap
+    #define wrapinc kut_wrapinc
+    #define wrapdec kut_wrapdec
+    #define wrapinc_post kut_wrapinc_post
+    #define wrapinc_pre kut_wrapinc_pre
+    #define wrapdec_post kut_wrapdec_post
+    #define wrapdec_pre kut_wrapdec_pre
+    #define offset_of kut_offset_of
+    #define container_of kut_container_of
+    #define align_up kut_align_up
+    #define align_down kut_align_down
+    #define log_level kut_log_level
+    #define log kut_log
+    #define todo kut_todo
+    #define unreachable kut_unreachable
+#endif /* KUT_NO_STRIP_PREFIX */

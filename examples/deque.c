@@ -1,13 +1,13 @@
-#define CORVUS_IMPLEMENTATION
-#define CORVUS_INITCAP 4
-#include "corvus.h"
+#define KUT_IMPLEMENTATION
+#define KUT_INIT_CAPACITY 4
+#include "kut.h"
 
 int main(void)
 {
-    Deque(int) deq = NULL;
+    int *deq = KUT_DEQUE_INITIALIZER;
 
-    for (int i = 0; i < 32; i++) deqpushb(deq, i);
-    for (int i = 80; i > 0; i--) deqpushf(deq, i);
+    for (int i = 0; i < 32; i++) deqpushback(deq, i);
+    for (int i = 80; i > 0; i--) deqpushfront(deq, i);
     printf("front: %d\n", deqfront(deq));
     printf("rear:  %d\n", deqrear(deq));
     printf("len:   %d\n", deqlen(deq));
@@ -17,8 +17,8 @@ int main(void)
     printf("%d\n", deqhdr(deq)->front);
     printf("%d\n", deqhdr(deq)->rear);
 
-    for (int i = 0; i < 20; i++) { printf("%d ", deqpopf(deq)); } printf("\n");
-    for (int i = 0; i < 20; i++) { printf("%d ", deqpopb(deq)); } printf("\n");
+    for (int i = 0; i < 20; i++) { printf("%d ", deqpopfront(deq)); } printf("\n");
+    for (int i = 0; i < 20; i++) { printf("%d ", deqpopback(deq)); } printf("\n");
 
     printf("front: %d\n", deqfront(deq));
     printf("rear:  %d\n", deqrear(deq));
